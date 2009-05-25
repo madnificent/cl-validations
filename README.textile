@@ -1,0 +1,67 @@
+h1. Validations
+
+Validations is a trivial Common Lisp library that allows you to validate your objects.
+
+This system allows you to have several validations for your classes.  It allows you to
+
+* validate objects
+* define validation rules
+* set offending symbols for the failed validations
+* provide messages accompanying the validations
+
+it is built on top of closer-mop
+
+h1. The basic howto
+
+This howto is not fully complete.  This library is expected to be extended with neccessary content as it is used more often.
+
+First, let's create a validatable object:
+
+  (use-package :validations)
+  (defclass user (validatable-object)
+    ((name :accessor name
+           :initarg :name)
+     (email :accessor email
+            :initarg :email)
+     (nick :accessor nick
+           :initarg :nick))
+  (:metaclass validatable-class)
+  (:validations (make-instance 'validation 
+                               :name 'email-is-valid
+                               :offending-keys '(email foobar)
+                               :message "Email must be in the form of \"name@domain.extention\"!"
+                               :check (lambda (object) (cl-ppcre:scan "\\w+@\\w+\\.\\w+" (email object))))
+                (make-instance 'validation
+                               :name 'nick
+                               :offending-keys '(nick)
+                               :message "Nick must be at least three characters long"
+                               :check (lambda (object) (> (length (nick object)) 3)))
+                (make-instance 'validation
+                               :name 'name
+                               :offending-keys '(name nick email)
+                               :message "You must enter your full name"
+                               :check (lambda (object) (cl-ppcre:scan ".+ .+" (name object))))))
+
+Now we can make an instance of this class:
+
+  (defvar *test-user* (make-instance 'user
+                                     :name "Real Name"
+                                     :email "valid@email.com"
+                                     :nick "test-user"))
+
+We're ready to play games now:
+
+  (valid-p *test-user*)
+  (validate *test-user*)
+  (setf (email *test-user*) "not@valid")
+  (valid-p *test-user*)
+  (validate *test-user*)
+  (setf (name *test-user*) "invalid")
+  (valid-p *test-user*)
+  (validate *test-user*)
+  (map 'list 'name (validate *test-user*))
+  (map 'list 'message (validate *test-user*))
+  (map 'list 'offending-keys (validate *test-user*))
+  (offending-validation-keys *test-user*)
+
+That's it! This describes the basic interface to the validations system.  It's currently quite straight-forward.  The definition of validations could be sweeter, feel free to propose some sweet interfaces.
