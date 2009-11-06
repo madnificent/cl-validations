@@ -1,6 +1,7 @@
 (defpackage :validations
   (:use :common-lisp
 	:closer-mop)
+  (:shadowing-import-from :closer-mop :defmethod :standard-generic-function :defmethod :defgeneric :standard-generic-function)
   (:export :validation
 	   :validatable-class
 	   :validatable-object
